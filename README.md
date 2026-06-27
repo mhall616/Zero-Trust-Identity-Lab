@@ -57,7 +57,7 @@ Sara Manager	sara.manager@Evergold94.onmicrosoft.com	Simulates a manager with st
 Admin Breakglass	breakglass@Evergold94.onmicrosoft.com	Emergency admin account for break-glass scenarios
 Each user was created via Entra ID > Users > New user > Create new user with a temporary password.
 Why a Breakglass account? Break-glass accounts are emergency administrator accounts that are excluded from Conditional Access policies. The point is to make sure you always have a way into the tenant if something goes wrong with your normal admin account or a misconfigured policy. This is a real-world best practice recommended by Microsoft and something you will see in almost every mature M365 environment.
-![Users List](screenshots/users-list.png)
+![Users List](users-list.png)
 ---
 Step 2: Security Group Creation
 Security groups were created to organize users by function. This lets you scope Conditional Access policies, SSPR, and PIM to specific user populations instead of applying everything to everyone.
@@ -67,14 +67,14 @@ Developers	Security	Alex Developer
 Managers	Security	Sara Manager
 Groups were created via Entra ID > Groups > New group with Membership type set to Assigned.
 Why groups instead of individual users in policies? Targeting groups makes everything scalable. When a new developer joins the org, you add them to the Developers group and they inherit all the right policies automatically. No need to touch the policies themselves.
-![Groups List](screenshots/groups-list.png)
+![Groups List](groups-list.png)
 ---
 Step 3: Disabling Security Defaults
 Before creating Conditional Access policies, Security Defaults needed to be turned off. Security Defaults and Conditional Access cannot run at the same time since they conflict with each other.
 Path: Entra ID > Properties > Manage security defaults > Disabled  
 Reason selected: "My organization is using Conditional Access"
 Turning off Security Defaults does not leave the tenant unprotected. It hands control over to the administrator so you can build something more tailored. The CA policies in the next steps replace and go beyond what Security Defaults provide.
-![Security Defaults Disabled](screenshots/security-defaults.png)
+![Security Defaults Disabled](security-defaults.png)
 ---
 Step 4: Enabling MFA for Users
 Per-user MFA was enabled for Alex Developer and Sara Manager through the legacy Per-user MFA portal.
@@ -85,7 +85,7 @@ Sara Manager	Enabled
 Admin Breakglass	Disabled (controlled via PIM)
 Mike Hall	Disabled (tenant admin account)
 In a mature Zero Trust environment, MFA enforcement lives entirely in Conditional Access rather than per-user settings. Per-user MFA is the older approach. CA001 in the next step is the modern way to do it. Both are configured here to show the contrast between legacy and current methods.
-![Per-user MFA](screenshots/per-user-mfa.png)
+![Per-user MFA](per-user mfa.png)
 ---
 Step 5: Conditional Access Policy 1 - Require MFA for All Users
 Policy Name: `CA001-Require-MFA-All-Users`  
@@ -97,7 +97,7 @@ Grant control	Require multifactor authentication
 Policy state	Report-only
 Why Report-only? In a lab environment, turning on a policy that enforces MFA on all users including your own admin account can lock you out if MFA registration is not complete. Report-only mode evaluates sign-ins and logs what would have happened without actually enforcing anything. In production you would set this to On after reviewing the logs and confirming everything looks right.
 What this prevents: Without MFA, a stolen password is all an attacker needs. MFA adds a second factor they cannot satisfy even with valid credentials.
-![CA001](screenshots/ca001.png)
+![CA001](Conditional Access 1.png)
 ---
 Step 6: Conditional Access Policy 2 - Block Legacy Authentication
 Policy Name: `CA002-Block-Legacy-Auth`  
@@ -109,7 +109,7 @@ Conditions - Client apps	Exchange ActiveSync clients, Other clients
 Grant control	Block access
 Policy state	Report-only
 Why block legacy authentication? Legacy protocols like SMTP, POP3, IMAP, and older Office clients do not support modern MFA challenges. That means even with CA001 in place, an attacker using a legacy auth client can bypass MFA entirely. Microsoft has reported that over 99% of password spray attacks use legacy authentication. Blocking it is one of the highest-impact things you can do.
-![CA002](screenshots/ca002.png)
+![CA002](Conditional Access 2.png)
 ---
 Step 7: Conditional Access Policy 3 - Require Compliant Device for Admins
 Policy Name: `CA003-Require-Compliant-Device-Admins`  
@@ -120,7 +120,7 @@ Target resources	All cloud apps
 Grant control	Require device to be marked as compliant
 Policy state	Report-only
 Why require compliant devices for admins? Admin accounts are the highest-value targets in any environment. Requiring that admin sign-ins come from Intune-managed compliant devices means that even compromised admin credentials cannot be used from an unmanaged or personal device. This is where identity security and endpoint security connect, which is a core Zero Trust principle.
-![All CA Policies](screenshots/ca-policies-all.png)
+![All CA Policies](ca-policies-all.png)
 ---
 Step 8: Self-Service Password Reset (SSPR)
 SSPR was configured to let users in the Developers group reset their own passwords without contacting the helpdesk.
@@ -144,7 +144,7 @@ Duration	1 year
 Scope	Evergold (tenant-wide)
 What is JIT access? Just-In-Time access means the account has no admin privileges by default. When elevated access is needed, the user activates their eligible role through PIM, provides a justification, and completes MFA. The role is granted for a limited time window and then expires automatically.
 PIM was genuinely one of the more interesting things to configure in this project. The idea that you can have a Global Administrator account that carries zero standing privilege is a serious security improvement over the traditional model. Even if the account credentials are fully compromised, the attacker gets nothing elevated without also passing MFA and triggering an activation that can be monitored and alerted on. The security posture improvement relative to how simple the setup is makes PIM one of those things that should be in every M365 environment running Entra ID P2.
-![PIM Assignment](screenshots/pim-eligible.png)
+![PIM Assignment](pim-eligible.png)
 ---
 Final Verification
 Component	Status
